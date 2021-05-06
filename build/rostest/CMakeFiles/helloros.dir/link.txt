@@ -1,0 +1,1 @@
+/usr/bin/c++    -rdynamic CMakeFiles/helloros.dir/src/rostestmain.cpp.o  -o /home/wyx/ros_catkin_ws/devel/lib/rostest/helloros 
