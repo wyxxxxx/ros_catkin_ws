@@ -12,11 +12,13 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
   std_msgs
+  PCL 
 )
 
 find_package(Eigen3)
 
 INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
+INCLUDE_DIRECTORIES(${PCL_INCLUDE_DIRS})
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -209,7 +211,11 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
 add_executable(slamtest src/slamtestmain.cpp)
 
 target_link_libraries(slamtest ${catkin_LIBRARIES})
+target_link_libraries (slamtest ${PCL_LIBRARIES})
+

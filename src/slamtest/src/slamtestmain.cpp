@@ -13,10 +13,22 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/LaserScan.h>
 
+//pcl库
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/point_types.h>
+#include <pcl/PCLPointCloud2.h>
+#include <pcl/conversions.h>
+#include <pcl_ros/transforms.h>
+#include <pcl/visualization/cloud_viewer.h>
+#include <pcl/io/io.h>
+#include <pcl/io/pcd_io.h>
+
 #include <cmath>
 
 #include <boost/foreach.hpp>
 #define foreach BOOST_FOREACH
+
+pcl::visualization::CloudViewer viewer("Cloud Viewer");
 
 using namespace Eigen;
 //"/home/wyx/ros_catkin_ws/lidardata/0.bag"
@@ -177,6 +189,26 @@ int main(int argc, char** argv)
             j++;
         }
     }
+    
+//    std::cout<<velox<<std::endl;
+    
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZI>);
+    cloud->points.resize(velox.rows());
+    cloud->width = velox.rows();
+    cloud->height = 1;
+    
+    for(int i=0;i<velox.rows();i++)
+    {
+        cloud->points[i].x=velox(i,0);
+        cloud->points[i].y=velox(i,1);
+        cloud->points[i].z=velox(i,2);
+    }
+    
+    //点云图像显示
+//    viewer.showCloud(cloud);
+//    while (!viewer.wasStopped ())
+//    {
+//    }
     
     
     return 0;

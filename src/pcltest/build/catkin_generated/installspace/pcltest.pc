@@ -1,0 +1,8 @@
+prefix=/usr/local
+
+Name: pcltest
+Description: Description of pcltest
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
