@@ -13,9 +13,9 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   PCL 
+  Eigen3
 )
 
-find_package(Eigen3)
 
 INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(${PCL_INCLUDE_DIRS})

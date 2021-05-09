@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/wyx/ros_catkin_ws/src/install/setup.sh

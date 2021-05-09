@@ -7,3 +7,4 @@
 # new environment variables
 
 # modified environment variables
+export PWD='/home/wyx/ros_catkin_ws/build'

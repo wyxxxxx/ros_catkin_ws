@@ -14,14 +14,15 @@
 #include <sensor_msgs/LaserScan.h>
 
 //pcl库
+#include <pcl/point_cloud.h> 
 #include <pcl_conversions/pcl_conversions.h>
-#include <pcl/point_types.h>
 #include <pcl/PCLPointCloud2.h>
 #include <pcl/conversions.h>
 #include <pcl_ros/transforms.h>
 #include <pcl/visualization/cloud_viewer.h>
-#include <pcl/io/io.h>
-#include <pcl/io/pcd_io.h>
+//#include <pcl/io/io.h>
+//#include <pcl/io/pcd_io.h>
+//#include <pcl/point_types.h>
 
 #include <cmath>
 
@@ -204,11 +205,26 @@ int main(int argc, char** argv)
         cloud->points[i].z=velox(i,2);
     }
     
-    //点云图像显示
+    //pcl库点云图像显示
 //    viewer.showCloud(cloud);
 //    while (!viewer.wasStopped ())
 //    {
 //    }
+
+    //rviz点云显示
+//    ros::NodeHandle nh; 
+//	ros::Publisher pcl_pub = nh.advertise<sensor_msgs::PointCloud2> ("pcl_output", 1); 
+//    sensor_msgs::PointCloud2 output; 
+//    pcl::toROSMsg(*cloud, output); 
+//	output.header.frame_id = "odom"; 
+    
+//    ros::Rate loop_rate(1); 
+//	while (ros::ok()) 
+//	{ 
+//		pcl_pub.publish(output);
+//	    ros::spinOnce(); 
+//		loop_rate.sleep(); 
+//	 } 
     
     
     return 0;
