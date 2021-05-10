@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   PCL 
   Eigen3
+  OpenCV  REQUIRED
 )
 
 

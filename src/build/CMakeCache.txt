@@ -14,6 +14,9 @@
 # EXTERNAL cache entries
 ########################
 
+//The directory containing a CMake configuration file for 3.
+3_DIR:PATH=3_DIR-NOTFOUND
+
 //The threading library used by boost-thread
 BOOST_THREAD_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libpthread.so
 
@@ -368,6 +371,15 @@ OPENNI_INCLUDE_DIRS:PATH=/usr/include/ni
 //Path to a library.
 OPENNI_LIBRARY:FILEPATH=/usr/lib/libOpenNI.so
 
+//The directory containing a CMake configuration file for OpenCV3.
+OpenCV3_DIR:PATH=OpenCV3_DIR-NOTFOUND
+
+//The directory containing a CMake configuration file for OpenCV.
+OpenCV_DIR:PATH=/usr/share/OpenCV
+
+//The directory containing a CMake configuration file for Opencv.
+Opencv_DIR:PATH=Opencv_DIR-NOTFOUND
+
 //path to 2d headers
 PCL_2D_INCLUDE_DIR:PATH=/usr/include/pcl-1.8
 
@@ -708,6 +720,15 @@ lib:FILEPATH=/opt/ros/melodic/lib/libtopic_tools.so
 //The directory containing a CMake configuration file for message_runtime.
 message_runtime_DIR:PATH=/opt/ros/melodic/share/message_runtime/cmake
 
+//The directory containing a CMake configuration file for opencv.
+opencv_DIR:PATH=opencv_DIR-NOTFOUND
+
+//Value Computed by CMake
+opencvtest_BINARY_DIR:STATIC=/home/wyx/ros_catkin_ws/src/build/opencvtest
+
+//Value Computed by CMake
+opencvtest_SOURCE_DIR:STATIC=/home/wyx/ros_catkin_ws/src/opencvtest
+
 //Value Computed by CMake
 pcltest_BINARY_DIR:STATIC=/home/wyx/ros_catkin_ws/src/build/pcltest
 
@@ -931,7 +952,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_NM
 CMAKE_NM-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=7
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=8
 //ADVANCED property for variable: CMAKE_OBJCOPY
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP
@@ -980,6 +1001,8 @@ DSSDK_LIBRARY_DepthSensePlugins-ADVANCED:INTERNAL=1
 DSSDK_LIBRARY_turbojpeg-ADVANCED:INTERNAL=1
 //Details about finding Flann
 FIND_PACKAGE_MESSAGE_DETAILS_Flann:INTERNAL=[/usr/lib/x86_64-linux-gnu/libflann_cpp_s.a][/usr/include][v()]
+//Details about finding OpenCV
+FIND_PACKAGE_MESSAGE_DETAILS_OpenCV:INTERNAL=[/usr][v3.2.0()]
 //Details about finding OpenNI2
 FIND_PACKAGE_MESSAGE_DETAILS_OpenNI2:INTERNAL=[/usr/lib/libOpenNI2.so][/usr/include/openni2][v()]
 //Details about finding PCL

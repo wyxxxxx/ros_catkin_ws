@@ -131,6 +131,7 @@ endif()
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
   include("/home/wyx/ros_catkin_ws/src/build/gtest/cmake_install.cmake")
+  include("/home/wyx/ros_catkin_ws/src/build/opencvtest/cmake_install.cmake")
   include("/home/wyx/ros_catkin_ws/src/build/pcltest/cmake_install.cmake")
   include("/home/wyx/ros_catkin_ws/src/build/rostest/cmake_install.cmake")
   include("/home/wyx/ros_catkin_ws/src/build/slamtest/cmake_install.cmake")

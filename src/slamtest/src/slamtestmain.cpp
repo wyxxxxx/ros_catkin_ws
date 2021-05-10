@@ -13,26 +13,33 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/LaserScan.h>
 
-//pcl库
+/*//pcl库
 #include <pcl/point_cloud.h> 
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/PCLPointCloud2.h>
 #include <pcl/conversions.h>
 #include <pcl_ros/transforms.h>
 #include <pcl/visualization/cloud_viewer.h>
+pcl::visualization::CloudViewer viewer("Cloud Viewer");
 //#include <pcl/io/io.h>
 //#include <pcl/io/pcd_io.h>
 //#include <pcl/point_types.h>
+*/
+
+//OpenCV
+#include <opencv2/opencv.hpp>
 
 #include <cmath>
 
 #include <boost/foreach.hpp>
 #define foreach BOOST_FOREACH
 
-pcl::visualization::CloudViewer viewer("Cloud Viewer");
 
 using namespace Eigen;
-//"/home/wyx/ros_catkin_ws/lidardata/0.bag"
+using namespace std;
+using namespace cv;
+
+
 MatrixXf ReadLisarData(std::string bagfile,float RotAngle)
 {
     //打开bag文件
@@ -89,7 +96,7 @@ MatrixXf ReadLisarData(std::string bagfile,float RotAngle)
             }
                 
         }
-//        std::cout<<j<<std::endl;
+//        cout<<j<<endl;
         
         int rownum = j;
         
@@ -104,7 +111,7 @@ MatrixXf ReadLisarData(std::string bagfile,float RotAngle)
         }
     
         cart = Map<MatrixXf>(cartarray,rownum,3);
-//        std::cout<<cart<<std::endl;
+//        cout<<cart<<endl;
         break;
     }
     
@@ -116,7 +123,7 @@ MatrixXf ReadLisarData(std::string bagfile,float RotAngle)
     Out1=P*cart1.transpose();
     Out2=Out1.transpose();
     
-//  std::cout<<Out2<<std::endl;
+//  cout<<Out2<<endl;
     
     
     bag.close();
@@ -145,9 +152,38 @@ void RemoveRow(Eigen::MatrixXf& matrix, unsigned int rowToRemove) {
 
 int main(int argc, char** argv)
 {
+    //参数设置
+    //相机内参矩阵
+    Matrix<float,3,4> R0;  
+    R0<<347.3107f,0,341.4781f,0,0,347.1215f,186.9693f,0,0,0,1,0;   
+        
+    //RT外参
+    float Z_theta=(EIGEN_PI/180)*0;   
+    float y_beta=(EIGEN_PI/180)*0;
+    float x_alpha=(EIGEN_PI/180)*0;
+    float T_x=0;
+    float T_y=-0.18;
+    float T_z=-0.04;
+        
+    Matrix3f R,R_0,Rx,Ry,Rz;
+    R_0<<0,-1,0,0,0,-1,1,0,0;
+    Rx<<1,0,0,0,cos(x_alpha),-sin(x_alpha),0,sin(x_alpha),cos(x_alpha);
+    Ry<<cos(y_beta),0,sin(y_beta),0,1,0,-sin(y_beta),0,cos(y_beta);
+    Rz<<cos(Z_theta),-sin(Z_theta),0,sin(Z_theta),cos(Z_theta),0,0,0,1;
+    R=R_0*Rx*Ry*Rz;
+        
+    Vector3f T;
+    T<<T_x,
+    T_y,
+    T_z;
+    Matrix4f RT;
+    RT<<R,T,
+        0,0,0,1;
+    
     //初始化ROS
     ros::init (argc, argv, "slamtest");
     
+    //读点云数据
     MatrixXf velo6,velo7,velo8,velo10,velo11,velo12,velo13,velo14,velo15,velo16,velo17,velo18;
     velo6  = ReadLisarData("/home/wyx/ros_catkin_ws/lidardata/6.bag",6);
     velo7  = ReadLisarData("/home/wyx/ros_catkin_ws/lidardata/7.bag",7);
@@ -177,7 +213,8 @@ int main(int argc, char** argv)
           velo8,
           velo6,
           velo12;
-
+          
+    //筛选出一部分点
     velox=velo;
     for(int i=0,j=0;i<velo.rows();i++)
     {
@@ -191,8 +228,7 @@ int main(int argc, char** argv)
         }
     }
     
-//    std::cout<<velox<<std::endl;
-    
+    /*//点云显示数据定义
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZI>);
     cloud->points.resize(velox.rows());
     cloud->width = velox.rows();
@@ -204,27 +240,40 @@ int main(int argc, char** argv)
         cloud->points[i].y=velox(i,1);
         cloud->points[i].z=velox(i,2);
     }
+    */
+    /*//pcl库点云图像显示
+    viewer.showCloud(cloud);
+    while (!viewer.wasStopped ())
+    {
+    }
+    */
+    /*//rviz点云显示
+    ros::NodeHandle nh; 
+	ros::Publisher pcl_pub = nh.advertise<sensor_msgs::PointCloud2> ("pcl_output", 1); 
+    sensor_msgs::PointCloud2 output; 
+    pcl::toROSMsg(*cloud, output); 
+	output.header.frame_id = "odom"; 
     
-    //pcl库点云图像显示
-//    viewer.showCloud(cloud);
-//    while (!viewer.wasStopped ())
-//    {
-//    }
+    ros::Rate loop_rate(1); 
+	while (ros::ok()) 
+	{ 
+		pcl_pub.publish(output);
+	    ros::spinOnce(); 
+		loop_rate.sleep(); 
+	 }
+	 */ 
 
-    //rviz点云显示
-//    ros::NodeHandle nh; 
-//	ros::Publisher pcl_pub = nh.advertise<sensor_msgs::PointCloud2> ("pcl_output", 1); 
-//    sensor_msgs::PointCloud2 output; 
-//    pcl::toROSMsg(*cloud, output); 
-//	output.header.frame_id = "odom"; 
+    Matrix<float,3,4> P;
+    P=R0*RT;
+    MatrixXf Px,Pxx;
+    Px.resize(3,velox.rows());
+    Px=P*velox.transpose();
+    Pxx.resize(velox.rows(),3);
+    Pxx=Px.transpose();
     
-//    ros::Rate loop_rate(1); 
-//	while (ros::ok()) 
-//	{ 
-//		pcl_pub.publish(output);
-//	    ros::spinOnce(); 
-//		loop_rate.sleep(); 
-//	 } 
+    
+
+
     
     
     return 0;

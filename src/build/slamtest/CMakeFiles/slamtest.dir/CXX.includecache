@@ -35,6 +35,8 @@ pcl_ros/transforms.h
 -
 pcl/visualization/cloud_viewer.h
 -
+opencv2/opencv.hpp
+-
 cmath
 -
 boost/foreach.hpp
