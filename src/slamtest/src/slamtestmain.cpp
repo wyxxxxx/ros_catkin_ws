@@ -292,8 +292,10 @@ int main(int argc, char** argv)
     cvtColor(I,GrayI,CV_BGR2GRAY);
     Mat DImage = Mat::zeros(I.size(),CV_8UC1);
     
+    /*//GrayI灰度图像显示
     namedWindow("GrayI", CV_WINDOW_AUTOSIZE);
 	imshow("GrayI", GrayI);
+    */
     
     MatrixXf dmap = MatrixXf::Zero(I.rows,I.cols);
     for(int i=0;i<mD.rows();i++)
@@ -304,7 +306,6 @@ int main(int argc, char** argv)
                 dmap(i,j)=1/mD(i,j);
         }
     }
-    
     dmap=255*(dmap.array()-dmap.minCoeff())/(dmap.maxCoeff()-dmap.minCoeff());
     dmap=round(dmap.array());
     
@@ -316,9 +317,108 @@ int main(int argc, char** argv)
         }
     }
     
+    /*//DImage点云在图像上的投影显示
     namedWindow("DImage", CV_WINDOW_AUTOSIZE);
 	imshow("DImage", DImage);
+    */
     
+    /******************************图像分割部分****************************/
+    // 1. change background
+	for (int row = 0; row < I.rows; row++) {
+		for (int col = 0; col < I.cols; col++) {
+			if ((I.at<Vec3b>(row, col)[0]>210)&&(I.at<Vec3b>(row, col)[1]>210)&&(I.at<Vec3b>(row, col)[2]>210)) {
+				I.at<Vec3b>(row, col)[0] = 0;
+				I.at<Vec3b>(row, col)[1] = 0;
+				I.at<Vec3b>(row, col)[2] = 0;
+			}
+		}
+	}
+	Mat kernel = (Mat_<float>(3, 3) << 1, 1, 1, 1, -8, 1, 1, 1, 1);
+	Mat imgLaplance;
+	Mat sharpenImg = I;
+	filter2D(I, imgLaplance, CV_32F, kernel, Point(-1, -1), 0, BORDER_DEFAULT);
+	I.convertTo(sharpenImg, CV_32F);
+	Mat resultImg = sharpenImg - imgLaplance;
+	resultImg.convertTo(resultImg, CV_8UC3);
+	imgLaplance.convertTo(imgLaplance, CV_8UC3);
+	//imshow("sharpen image", resultImg);
+    
+    // convert to binary
+	Mat binaryImg;
+	cvtColor(I, resultImg, CV_BGR2GRAY);
+	threshold(resultImg, binaryImg, 1, 255, THRESH_BINARY);
+	//imshow("binary image", binaryImg);
+
+	Mat distImg;
+	distanceTransform(binaryImg, distImg, DIST_L1, 3, 5);
+	normalize(distImg, distImg, 0, 1, NORM_MINMAX);
+	//imshow("distance result", distImg);
+    
+    // binary again
+	threshold(distImg, distImg, .4, 1, THRESH_BINARY);
+	Mat k1 = Mat::ones(13, 13, CV_8UC1);
+	erode(distImg, distImg, k1, Point(-1, -1));
+	//imshow("distance binary image", distImg);
+    
+    // markers 
+	Mat dist_8u;
+	distImg.convertTo(dist_8u, CV_8U);
+	vector<vector<Point>> contours;
+	findContours(dist_8u, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0));
+    
+    // create makers
+	Mat markers = Mat::zeros(I.size(), CV_32SC1);
+	for (size_t i = 0; i < contours.size(); i++) {
+		drawContours(markers, contours, static_cast<int>(i), Scalar::all(static_cast<int>(i) + 1), -1);
+	}
+	circle(markers, Point(5, 5), 3, Scalar(255, 255, 255), -1);
+	//imshow("my markers", markers*10000);
+
+	// perform watershed
+	watershed(I, markers);
+	Mat mark = Mat::zeros(markers.size(), CV_8UC1);
+	markers.convertTo(mark, CV_8UC1);
+	bitwise_not(mark, mark, Mat());
+	//imshow("watershed image", mark);
+
+	// generate random color
+	vector<Vec3b> colors;
+	for (size_t i = 0; i < contours.size(); i++) {
+		int r = theRNG().uniform(0, 255);
+		int g = theRNG().uniform(0, 255);
+		int b = theRNG().uniform(0, 255);
+		colors.push_back(Vec3b((uchar)b, (uchar)g, (uchar)r));
+	}
+
+	// fill with color and display final result
+	Mat dst = Mat::zeros(markers.size(), CV_8UC3);
+	for (int row = 0; row < markers.rows; row++) {
+		for (int col = 0; col < markers.cols; col++) {
+			int index = markers.at<int>(row, col);
+			if (index > 0 && index <= static_cast<int>(contours.size())) {
+				dst.at<Vec3b>(row, col) = colors[index - 1];
+			}
+			else {
+				dst.at<Vec3b>(row, col) = Vec3b(0, 0, 0);
+			}
+		}
+	}
+	//imshow("Final Result", dst);
+	
+	//输出目标数量
+    cout<<"obstacle_num = "<<contours.size()<<endl;
+    /*******************************end****************************/
+    
+    //计算中心坐标
+	vector<Moments> mu(contours.size());
+    vector<Point2f> mc(contours.size());
+	for (int i = 0; i < contours.size(); i++)
+	{
+		mu[i] = moments(contours[i], false);                             //计算矩
+        mc[i] = Point2f(mu[i].m10 / mu[i].m00, mu[i].m01 / mu[i].m00);   //计算中心矩
+	}
+	cout<<mc<<endl;
+
     waitKey(0);
     return 0;
     
