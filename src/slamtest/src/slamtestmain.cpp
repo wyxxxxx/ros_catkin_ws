@@ -263,6 +263,13 @@ int main(int argc, char** argv)
 	 }
 	 */ 
 
+    //读取图像
+    Mat I = imread("/home/wyx/ros_catkin_ws/src/opencvtest/picturedata/manyobs1.jpg");
+    if (I.empty()) {
+		printf("could not load image...\n");
+		return -1;
+	}
+    
     Matrix<float,3,4> P;
     P=R0*RT;
     MatrixXf Px,Pxx;
@@ -271,11 +278,48 @@ int main(int argc, char** argv)
     Pxx.resize(velox.rows(),3);
     Pxx=Px.transpose();
     
+    Pxx.col(0)=Pxx.col(0).array()/Pxx.col(2).array();
+    Pxx.col(1)=Pxx.col(1).array()/Pxx.col(2).array();
     
-
-
+    //原始深度图
+    MatrixXf mD = MatrixXf::Zero(I.rows,I.cols);
+    for(int i=0;i<Pxx.rows();i++)
+    {
+        mD(round(Pxx(i,1)),round(Pxx(i,0)))=Pxx(i,2);
+    }
     
+    Mat GrayI;
+    cvtColor(I,GrayI,CV_BGR2GRAY);
+    Mat DImage = Mat::zeros(I.size(),CV_8UC1);
     
+    namedWindow("GrayI", CV_WINDOW_AUTOSIZE);
+	imshow("GrayI", GrayI);
+    
+    MatrixXf dmap = MatrixXf::Zero(I.rows,I.cols);
+    for(int i=0;i<mD.rows();i++)
+    {
+        for(int j=0;j<mD.cols();j++)
+        {
+            if(mD(i,j)!=0)
+                dmap(i,j)=1/mD(i,j);
+        }
+    }
+    
+    dmap=255*(dmap.array()-dmap.minCoeff())/(dmap.maxCoeff()-dmap.minCoeff());
+    dmap=round(dmap.array());
+    
+    for(int i=0;i<DImage.rows;i++)
+    {
+        for(int j=0;j<DImage.cols;j++)
+        {
+            DImage.at<uchar>(i,j)=0.5f*dmap(i,j)+ 0.5f*GrayI.at<uchar>(i,j);
+        }
+    }
+    
+    namedWindow("DImage", CV_WINDOW_AUTOSIZE);
+	imshow("DImage", DImage);
+    
+    waitKey(0);
     return 0;
     
 }
