@@ -39,9 +39,8 @@ using namespace Eigen;
 using namespace std;
 using namespace cv;
 
-
-MatrixXf ReadLisarData(std::string bagfile,float RotAngle)
-{
+//函数功能：读雷达数据并转换为笛卡尔坐标系
+MatrixXf ReadLisarData(std::string bagfile,float RotAngle){
     //打开bag文件
     rosbag::Bag bag;
     bag.open(bagfile,rosbag::bagmode::Read); 
@@ -134,7 +133,7 @@ MatrixXf ReadLisarData(std::string bagfile,float RotAngle)
 
 
 //函数功能：删除矩阵某一行
-void RemoveRow(Eigen::MatrixXf& matrix, unsigned int rowToRemove) {
+void RemoveRow(Eigen::MatrixXf& matrix, unsigned int rowToRemove){
   unsigned int numRows = matrix.rows() - 1;
   unsigned int numCols = matrix.cols();
  
@@ -147,11 +146,65 @@ void RemoveRow(Eigen::MatrixXf& matrix, unsigned int rowToRemove) {
 }
 
 
+//函数功能：找最近的不为0的像素点深度值
+Vector2f FindNearestDepth(vector<Point2f> mc,MatrixXf mD){
+    Vector2f depth;
+    for(int i=0;i<mc.size();i++)
+    {
+        for(int j=1;j<10;j++)
+        {
+            if(mD(mc[i].y-j,mc[i].x-j)!=0)
+            {
+                depth(i,0) = mD(mc[i].y-j,mc[i].x-j);
+                break;
+            }
+            else if(mD(mc[i].y-j,mc[i].x)!=0)
+            {
+                depth(i,0) = mD(mc[i].y-j,mc[i].x);
+                break;
+            }
+            else if(mD(mc[i].y,mc[i].x-j)!=0)
+            {
+                depth(i,0) = mD(mc[i].y,mc[i].x-j);
+                break;
+            }
+            else if(mD(mc[i].y-j,mc[i].x+j)!=0)
+            {
+                depth(i,0) = mD(mc[i].y-j,mc[i].x+j);
+                break;
+            }
+            else if(mD(mc[i].y+j,mc[i].x-j)!=0)
+            {
+                depth(i,0) = mD(mc[i].y+j,mc[i].x-j);
+                break;
+            }
+            else if(mD(mc[i].y,mc[i].x+j)!=0)
+            {
+                depth(i,0) = mD(mc[i].y,mc[i].x+j);
+                break;
+            }
+            else if(mc[i].y+j,mD(mc[i].x)!=0)
+            {
+                depth(i,0) = mD(mc[i].y+j,mc[i].x);
+                break;
+            }
+            else if(mD(mc[i].y+j,mc[i].x+j)!=0)
+            {
+                depth(i,0) = mD(mc[i].y+j,mc[i].x+j);
+                break;
+            }
+            
+        }
+    }
+    return depth;
+        
+    
+}
 
 
 
-int main(int argc, char** argv)
-{
+
+int main(int argc, char** argv){
     //参数设置
     //相机内参矩阵
     Matrix<float,3,4> R0;  
@@ -416,8 +469,16 @@ int main(int argc, char** argv)
 	{
 		mu[i] = moments(contours[i], false);                             //计算矩
         mc[i] = Point2f(mu[i].m10 / mu[i].m00, mu[i].m01 / mu[i].m00);   //计算中心矩
+        mc[i].x=round(mc[i].x);
+        mc[i].y=round(mc[i].y);
 	}
-	cout<<mc<<endl;
+	cout<<"中心点坐标为："<<endl<<mc<<endl;
+    
+    //寻找最近不为0的深度值作为中心点深度值
+    Vector2f depth;
+    depth = FindNearestDepth(mc,mD);
+    cout<<depth<<endl;
+
 
     waitKey(0);
     return 0;
