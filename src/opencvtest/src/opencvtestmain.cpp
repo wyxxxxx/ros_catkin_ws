@@ -103,6 +103,9 @@ int main(int argc, char** argv) {
 		}
 	}
 	imshow("Final Result", dst);
+    
+    
+    cout<<mark<<endl;
 
 	waitKey(0);
 	return 0;

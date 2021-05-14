@@ -9,6 +9,8 @@
 /home/wyx/ros_catkin_ws/src/slamtest/src/slamtestmain.cpp
 iostream
 -
+algorithm
+-
 ros/ros.h
 /home/wyx/ros_catkin_ws/src/slamtest/src/ros/ros.h
 rosbag/bag.h

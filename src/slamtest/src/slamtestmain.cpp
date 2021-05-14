@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 
 //ros
 #include "ros/ros.h"
@@ -147,8 +148,9 @@ void RemoveRow(Eigen::MatrixXf& matrix, unsigned int rowToRemove){
 
 
 //函数功能：找最近的不为0的像素点深度值
-Vector2f FindNearestDepth(vector<Point2f> mc,MatrixXf mD){
-    Vector2f depth;
+VectorXf FindNearestDepth(vector<Point2f> mc,MatrixXf mD){
+    VectorXf depth;
+    depth.resize(mc.size());
     for(int i=0;i<mc.size();i++)
     {
         for(int j=1;j<10;j++)
@@ -202,6 +204,19 @@ Vector2f FindNearestDepth(vector<Point2f> mc,MatrixXf mD){
 }
 
 
+void sort_vec(const MatrixXf& mtrx,MatrixXf& sorted_mtrx,VectorXi& ind){  
+  ind = VectorXi::LinSpaced(mtrx.rows(),0,mtrx.rows()-1);
+  auto rule=[mtrx](int i,int j)->bool
+  {
+    return mtrx(i,2)<mtrx(j,2);
+  };
+  sort(ind.data(),ind.data()+ind.size(),rule);
+  //data成员函数返回VectorXd的第一个元素的指针，类似于begin()
+  sorted_mtrx.resize(mtrx.rows(),mtrx.cols());
+  for(int i=0;i<mtrx.rows();i++){
+    sorted_mtrx.row(i)=mtrx.row(ind(i));
+  }
+}
 
 
 int main(int argc, char** argv){
@@ -472,14 +487,40 @@ int main(int argc, char** argv){
         mc[i].x=round(mc[i].x);
         mc[i].y=round(mc[i].y);
 	}
-	cout<<"中心点坐标为："<<endl<<mc<<endl;
     
     //寻找最近不为0的深度值作为中心点深度值
-    Vector2f depth;
+    VectorXf depth;
     depth = FindNearestDepth(mc,mD);
-    cout<<depth<<endl;
-
-
+    
+    //中心点坐标降序排序
+    MatrixXf CTP,CTP_sorted;
+    VectorXi Ind;
+    CTP.resize(contours.size(),3);
+    CTP_sorted.resize(contours.size(),3);
+    for(int i=0;i<contours.size();i++){
+        CTP(i,0) = mc[i].y;
+        CTP(i,1) = mc[i].x;
+        CTP(i,2) = depth(i);
+    }
+    sort_vec(CTP,CTP_sorted,Ind);
+    cout<<"中心点坐标降序排序及对应深度值："<<endl<<CTP_sorted<<endl;
+    
+    //将当前凸包内部点标号设为1
+    MatrixXf Label;
+    Label.resize(I.rows,I.cols);
+    for(int i=0;i<I.rows;i++){
+        for(int j=0;j<I.cols;j++){
+            if(int(mark.at<uchar>(i,j))==int(mark.at<uchar>(CTP(0,0),CTP(0,1))))
+            {
+                Label(i,j)=1;
+            }
+            else
+            {
+                Label(i,j)=0;
+            }
+        }
+    }
+    
     waitKey(0);
     return 0;
     
