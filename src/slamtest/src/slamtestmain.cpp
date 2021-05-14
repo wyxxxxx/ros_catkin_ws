@@ -71,11 +71,6 @@ MatrixXf ReadLisarData(std::string bagfile,float RotAngle){
     R1T1<<R1,T1,0,0,0,1;
     P=R1T1.inverse();
     
-//    std::cout<<R1<<std::endl;
-//    std::cout<<T1<<std::endl;
-//    std::cout<<R1T1<<std::endl;
-//    std::cout<<P<<std::endl;
-    
     foreach(rosbag::MessageInstance const m, view)
     {
         sensor_msgs::LaserScan::ConstPtr s = m.instantiate<sensor_msgs::LaserScan>();
@@ -96,7 +91,6 @@ MatrixXf ReadLisarData(std::string bagfile,float RotAngle){
             }
                 
         }
-//        cout<<j<<endl;
         
         int rownum = j;
         
@@ -109,9 +103,7 @@ MatrixXf ReadLisarData(std::string bagfile,float RotAngle){
             b++;
             
         }
-    
         cart = Map<MatrixXf>(cartarray,rownum,3);
-//        cout<<cart<<endl;
         break;
     }
     
@@ -122,16 +114,11 @@ MatrixXf ReadLisarData(std::string bagfile,float RotAngle){
     
     Out1=P*cart1.transpose();
     Out2=Out1.transpose();
-    
-//  cout<<Out2<<endl;
-    
-    
-    bag.close();
-    
+
+    bag.close();    
     return Out2;
     
 }
-
 
 //函数功能：删除矩阵某一行
 void RemoveRow(Eigen::MatrixXf& matrix, unsigned int rowToRemove){
@@ -145,7 +132,6 @@ void RemoveRow(Eigen::MatrixXf& matrix, unsigned int rowToRemove){
  
   matrix.conservativeResize(numRows,numCols);
 }
-
 
 //函数功能：找最近的不为0的像素点深度值
 VectorXf FindNearestDepth(vector<Point2f> mc,MatrixXf mD){
@@ -203,7 +189,7 @@ VectorXf FindNearestDepth(vector<Point2f> mc,MatrixXf mD){
     
 }
 
-
+//函数功能：根据矩阵第三列元素对矩阵行排序
 void sort_vec(const MatrixXf& mtrx,MatrixXf& sorted_mtrx,VectorXi& ind){  
   ind = VectorXi::LinSpaced(mtrx.rows(),0,mtrx.rows()-1);
   auto rule=[mtrx](int i,int j)->bool
@@ -432,7 +418,7 @@ int main(int argc, char** argv){
 	Mat dist_8u;
 	distImg.convertTo(dist_8u, CV_8U);
 	vector<vector<Point>> contours;
-	findContours(dist_8u, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0));
+	findContours(dist_8u, contours,RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0));
     
     // create makers
 	Mat markers = Mat::zeros(I.size(), CV_32SC1);
@@ -506,18 +492,81 @@ int main(int argc, char** argv){
     cout<<"中心点坐标降序排序及对应深度值："<<endl<<CTP_sorted<<endl;
     
     //将当前凸包内部点标号设为1
-    MatrixXf Label;
+    MatrixXf Label; 
     Label.resize(I.rows,I.cols);
-    for(int i=0;i<I.rows;i++){
-        for(int j=0;j<I.cols;j++){
-            if(int(mark.at<uchar>(i,j))==int(mark.at<uchar>(CTP(0,0),CTP(0,1))))
+    int rowsnum=0;
+    for(int i=0;i<I.cols;i++){
+        for(int j=0;j<I.rows;j++){
+            if(int(mark.at<uchar>(j,i))==int(mark.at<uchar>(CTP(0,0),CTP(0,1))))
             {
-                Label(i,j)=1;
+                Label(j,i)=1;
+                rowsnum++;
             }
             else
             {
-                Label(i,j)=0;
+                Label(j,i)=0;
             }
+        }
+    }
+    //只留障碍物处深度值
+    MatrixXf mDD;       //稀疏深度层
+    mDD.resize(I.rows,I.cols);
+    mDD = mD.array()*Label.array();
+    
+    //计算凸包内部点的坐标
+    MatrixXf star_oneobj;
+    int rowsnum2=0;
+    star_oneobj.resize(rowsnum,2);
+    for(int i=0;i<I.cols;i++){
+        for(int j=0;j<I.rows;j++){
+            if(Label(j,i)==1)
+            {
+                star_oneobj(rowsnum2,0)=i;
+                star_oneobj(rowsnum2,1)=j;
+                rowsnum2++;
+            }
+        }
+    }
+    
+    //计算已知深度的坐标及深度值
+    Mat pro_emg;
+	resultImg.convertTo(pro_emg, CV_8U);
+	vector<vector<Point>> contours2;
+	findContours(pro_emg, contours2,RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0));
+    VectorXf mark_objs;
+    mark_objs.resize(Pxx.rows());
+    for(int i=0;i<Pxx.rows();i++){
+        Point2f pt;
+        pt.x = Pxx(i,0);
+        pt.y = Pxx(i,1);
+        if(pointPolygonTest(contours2[Ind(0)],pt,false)==1){
+            mark_objs(i)=1;
+        }
+        else{
+            mark_objs(i)=0;
+        }
+    }
+    MatrixXf x_oneobj,xx_oneobj,y_oneobj,yy_oneobj;
+    x_oneobj.resize(Pxx.rows(),2);
+    y_oneobj.resize(Pxx.rows(),1);
+    x_oneobj.col(0)=Pxx.block(0,0,Pxx.rows(),1).array()*mark_objs.array();
+    x_oneobj.col(1)=Pxx.block(0,1,Pxx.rows(),1).array()*mark_objs.array();
+    y_oneobj=Pxx.col(2).array()*mark_objs.array();
+    xx_oneobj=x_oneobj;
+    yy_oneobj=y_oneobj;
+    
+    for(int i=0,j=0,k=0;i<Pxx.rows();i++){
+        if(xx_oneobj(i,0)==0){
+            RemoveRow(x_oneobj,j);
+        }
+        else{
+            j++;
+        }
+        if(yy_oneobj(i,0)==0){
+            RemoveRow(y_oneobj,k);
+        }
+        else{
+            k++;
         }
     }
     
