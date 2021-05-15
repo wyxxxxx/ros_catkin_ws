@@ -9,6 +9,7 @@
 //Eigen
 #include <Eigen/Core>
 #include <Eigen/Dense>
+#include <Eigen/Cholesky>
 
 // 此处为include相关消息类的头文件，如果有自定义的头文件，请将其包含在内
 #include <sensor_msgs/PointCloud2.h>
@@ -204,6 +205,23 @@ void sort_vec(const MatrixXf& mtrx,MatrixXf& sorted_mtrx,VectorXi& ind){
   }
 }
 
+//函数功能：
+MatrixXf SQDIST(MatrixXf Sample,MatrixXf Pre){
+    MatrixXf A,B,C;
+    A.resize(Sample.rows(),Pre.rows());
+    B.resize(Sample.rows(),Pre.rows());
+    C.resize(Sample.rows(),Pre.rows());
+    for(int i=0;i<Sample.cols();i++){
+        for(int j=0;j<Pre.rows();j++){
+            A.col(j)=Sample.col(i);
+        }
+        for(int k=0;k<Sample.rows();k++){
+            B.row(k)=Pre.col(i).transpose();
+        }
+        C=C.array()+pow((A-B).array(),2);
+    }
+    return C;
+}
 
 int main(int argc, char** argv){
     //参数设置
@@ -569,7 +587,42 @@ int main(int argc, char** argv){
             k++;
         }
     }
+    float m_Z_oneobj=0;
+    m_Z_oneobj=y_oneobj.sum()/y_oneobj.rows();
+    y_oneobj=y_oneobj.array()-m_Z_oneobj;
     
+    
+    //GPR
+    MatrixXf inputloghyper;
+    inputloghyper.resize(3,1);
+    inputloghyper<<1,1,0.05f;
+    float ell=0,sf2=0,sn2=0;
+    ell=inputloghyper(0);
+    sf2=pow(inputloghyper(1),2);
+    sn2=pow(inputloghyper(2),2);
+    MatrixXf Kxx = MatrixXf::Zero(x_oneobj.rows(),x_oneobj.rows());
+    ////加速计算方法，参考来自《Gaussian Processes for Machine Learning》
+    MatrixXf Kx_pro = -0.5*SQDIST(x_oneobj.array()/ell,x_oneobj.array()/ell);
+    MatrixXf KKxx = sf2*exp(Kx_pro.array());
+    Kxx=Kxx+KKxx;
+    KKxx=sn2*(MatrixXf::Identity(x_oneobj.rows(),x_oneobj.rows()));
+    Kxx=Kxx+KKxx;
+    //cout<<Kxx<<endl;
+    MatrixXf L,alpha;
+    L.resize(Kxx.rows(),Kxx.cols());
+    alpha.resize(Kxx.rows(),1);
+    L=Kxx.llt().matrixL();       //cholesky
+    alpha=L.transpose().inverse()*(L.inverse()*y_oneobj);
+    //cout<<alpha<<endl;
+    ////求预测和方差
+    MatrixXf Kxxstar = MatrixXf::Zero(x_oneobj.rows(),star_oneobj.rows());
+    MatrixXf Kxstar_pro = -0.5*SQDIST(x_oneobj.array()/ell,star_oneobj.array()/ell);
+    MatrixXf KKxxstar=sf2*exp(Kxstar_pro.array());
+    Kxxstar=Kxxstar+KKxxstar;
+    MatrixXf fmean = Kxxstar.transpose()*alpha;
+    cout<<fmean<<endl;
+    
+    //cout<<Kxxstar.size()<<endl;
     waitKey(0);
     return 0;
     

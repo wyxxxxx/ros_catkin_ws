@@ -21,6 +21,8 @@ Eigen/Core
 -
 Eigen/Dense
 -
+Eigen/Cholesky
+-
 sensor_msgs/PointCloud2.h
 -
 sensor_msgs/LaserScan.h
