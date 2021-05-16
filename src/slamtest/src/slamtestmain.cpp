@@ -21,14 +21,18 @@
 #include <pcl/conversions.h>
 #include <pcl_ros/transforms.h>
 #include <pcl/visualization/cloud_viewer.h>
+#include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/ModelCoefficients.h>
-//#include <pcl/io/pcd_io.h>
+#include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/segmentation/extract_clusters.h>
 #include <pcl/filters/extract_indices.h>
-
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/features/normal_3d.h>
+#include <pcl/kdtree/kdtree.h>
 
 //OpenCV
 #include <opencv2/opencv.hpp>
@@ -669,7 +673,7 @@ int main(int argc, char** argv){
     seg.setModelType (SACMODEL_PLANE);
     seg.setMethodType (SAC_RANSAC);
     // 距离阈值 单位m
-    seg.setDistanceThreshold (0.01f);
+    seg.setDistanceThreshold (0.018f);
     seg.setInputCloud (cloud);
     seg.segment(*inliers, *coefficients);
     
@@ -680,7 +684,7 @@ int main(int argc, char** argv){
     extract.filter (*cloud_filtered);
     
     cout<<cloud_filtered->points.size()<<endl;
-    /*//移除地面点云显示
+    /*//pcl移除地面点云显示
     pcl::visualization::CloudViewer viewer("Filtered");
     viewer.showCloud(cloud_filtered);
     while(!viewer.wasStopped()){
@@ -688,6 +692,55 @@ int main(int argc, char** argv){
     }
     */
     
+    //聚类算法
+    search::KdTree<PointXYZ>::Ptr tree (new search::KdTree<PointXYZ>);
+    tree->setInputCloud (cloud_filtered);
+    
+    vector<PointIndices> cluster_indices;
+    EuclideanClusterExtraction<PointXYZ> ec;
+    ec.setClusterTolerance (0.025f); //设置近邻搜索的搜索半径为2cm
+    ec.setMinClusterSize (30);    //设置一个聚类需要的最少点数目为100
+    ec.setMaxClusterSize (400);  //设置一个聚类需要的最大点数目为25000
+    ec.setSearchMethod (tree);     //设置点云的搜索机制
+    ec.setInputCloud (cloud_filtered); //设置原始点云 
+    ec.extract (cluster_indices);      //从点云中提取聚类
+    
+    //可视化聚类结果
+    int color_bar[][3]=
+    {
+        { 255,0,0},
+        { 0,255,0 },
+        { 0,0,255 },
+        { 0,255,255 },
+        { 255,255,0 },
+        { 255,255,255 },
+        { 255,0,255 }
+    };
+    visualization::PCLVisualizer viewer("segmention");
+    int j = 0;
+    for(vector<PointIndices>::const_iterator it=cluster_indices.begin();it!=cluster_indices.end();++it)
+    {
+        PointCloud<PointXYZ>::Ptr cloud_cluster (new PointCloud<PointXYZ>);
+        for(vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++)
+            cloud_cluster->points.push_back (cloud_filtered->points[*pit]); 
+        
+        cloud_cluster->width = cloud_cluster->points.size ();
+        cloud_cluster->height = 1;
+        cloud_cluster->is_dense = true;
+        cout<<"PointCloud representing the Cluster: "<<cloud_cluster->points.size()<<" data points."<< endl;
+        visualization::PointCloudColorHandlerCustom<PointXYZ> cloud_in_color_h(cloud,
+            color_bar[j][0],
+            color_bar[j][1],
+            color_bar[j][2]);                           //赋予显示点云的颜色
+        viewer.addPointCloud(cloud_cluster, cloud_in_color_h, to_string(j));
+        j++;
+    }
+    
+    while(!viewer.wasStopped())
+    {
+        viewer.spinOnce(100);
+        boost::this_thread::sleep(boost::posix_time::microseconds(100000));
+    }
     
     
     //waitKey(0);
