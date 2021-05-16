@@ -80,17 +80,6 @@ install/local/fast: preinstall/fast
 	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
 .PHONY : install/local/fast
 
-# Special rule for the target rebuild_cache
-rebuild_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	/usr/bin/cmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
-.PHONY : rebuild_cache
-
-# Special rule for the target rebuild_cache
-rebuild_cache/fast: rebuild_cache
-
-.PHONY : rebuild_cache/fast
-
 # Special rule for the target test
 test:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running tests..."
@@ -122,6 +111,17 @@ edit_cache:
 edit_cache/fast: edit_cache
 
 .PHONY : edit_cache/fast
+
+# Special rule for the target rebuild_cache
+rebuild_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
+	/usr/bin/cmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+.PHONY : rebuild_cache
+
+# Special rule for the target rebuild_cache
+rebuild_cache/fast: rebuild_cache
+
+.PHONY : rebuild_cache/fast
 
 # Special rule for the target install
 install: preinstall
@@ -168,96 +168,6 @@ depend:
 .PHONY : depend
 
 # Convenience name for target.
-pcltest/CMakeFiles/roscpp_generate_messages_py.dir/rule:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 pcltest/CMakeFiles/roscpp_generate_messages_py.dir/rule
-.PHONY : pcltest/CMakeFiles/roscpp_generate_messages_py.dir/rule
-
-# Convenience name for target.
-roscpp_generate_messages_py: pcltest/CMakeFiles/roscpp_generate_messages_py.dir/rule
-
-.PHONY : roscpp_generate_messages_py
-
-# fast build rule for target.
-roscpp_generate_messages_py/fast:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f pcltest/CMakeFiles/roscpp_generate_messages_py.dir/build.make pcltest/CMakeFiles/roscpp_generate_messages_py.dir/build
-.PHONY : roscpp_generate_messages_py/fast
-
-# Convenience name for target.
-pcltest/CMakeFiles/roscpp_generate_messages_eus.dir/rule:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 pcltest/CMakeFiles/roscpp_generate_messages_eus.dir/rule
-.PHONY : pcltest/CMakeFiles/roscpp_generate_messages_eus.dir/rule
-
-# Convenience name for target.
-roscpp_generate_messages_eus: pcltest/CMakeFiles/roscpp_generate_messages_eus.dir/rule
-
-.PHONY : roscpp_generate_messages_eus
-
-# fast build rule for target.
-roscpp_generate_messages_eus/fast:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f pcltest/CMakeFiles/roscpp_generate_messages_eus.dir/build.make pcltest/CMakeFiles/roscpp_generate_messages_eus.dir/build
-.PHONY : roscpp_generate_messages_eus/fast
-
-# Convenience name for target.
-pcltest/CMakeFiles/roscpp_generate_messages_lisp.dir/rule:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 pcltest/CMakeFiles/roscpp_generate_messages_lisp.dir/rule
-.PHONY : pcltest/CMakeFiles/roscpp_generate_messages_lisp.dir/rule
-
-# Convenience name for target.
-roscpp_generate_messages_lisp: pcltest/CMakeFiles/roscpp_generate_messages_lisp.dir/rule
-
-.PHONY : roscpp_generate_messages_lisp
-
-# fast build rule for target.
-roscpp_generate_messages_lisp/fast:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f pcltest/CMakeFiles/roscpp_generate_messages_lisp.dir/build.make pcltest/CMakeFiles/roscpp_generate_messages_lisp.dir/build
-.PHONY : roscpp_generate_messages_lisp/fast
-
-# Convenience name for target.
-pcltest/CMakeFiles/rosgraph_msgs_generate_messages_cpp.dir/rule:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 pcltest/CMakeFiles/rosgraph_msgs_generate_messages_cpp.dir/rule
-.PHONY : pcltest/CMakeFiles/rosgraph_msgs_generate_messages_cpp.dir/rule
-
-# Convenience name for target.
-rosgraph_msgs_generate_messages_cpp: pcltest/CMakeFiles/rosgraph_msgs_generate_messages_cpp.dir/rule
-
-.PHONY : rosgraph_msgs_generate_messages_cpp
-
-# fast build rule for target.
-rosgraph_msgs_generate_messages_cpp/fast:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f pcltest/CMakeFiles/rosgraph_msgs_generate_messages_cpp.dir/build.make pcltest/CMakeFiles/rosgraph_msgs_generate_messages_cpp.dir/build
-.PHONY : rosgraph_msgs_generate_messages_cpp/fast
-
-# Convenience name for target.
-pcltest/CMakeFiles/std_msgs_generate_messages_lisp.dir/rule:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 pcltest/CMakeFiles/std_msgs_generate_messages_lisp.dir/rule
-.PHONY : pcltest/CMakeFiles/std_msgs_generate_messages_lisp.dir/rule
-
-# Convenience name for target.
-std_msgs_generate_messages_lisp: pcltest/CMakeFiles/std_msgs_generate_messages_lisp.dir/rule
-
-.PHONY : std_msgs_generate_messages_lisp
-
-# fast build rule for target.
-std_msgs_generate_messages_lisp/fast:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f pcltest/CMakeFiles/std_msgs_generate_messages_lisp.dir/build.make pcltest/CMakeFiles/std_msgs_generate_messages_lisp.dir/build
-.PHONY : std_msgs_generate_messages_lisp/fast
-
-# Convenience name for target.
-pcltest/CMakeFiles/roscpp_generate_messages_cpp.dir/rule:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 pcltest/CMakeFiles/roscpp_generate_messages_cpp.dir/rule
-.PHONY : pcltest/CMakeFiles/roscpp_generate_messages_cpp.dir/rule
-
-# Convenience name for target.
-roscpp_generate_messages_cpp: pcltest/CMakeFiles/roscpp_generate_messages_cpp.dir/rule
-
-.PHONY : roscpp_generate_messages_cpp
-
-# fast build rule for target.
-roscpp_generate_messages_cpp/fast:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f pcltest/CMakeFiles/roscpp_generate_messages_cpp.dir/build.make pcltest/CMakeFiles/roscpp_generate_messages_cpp.dir/build
-.PHONY : roscpp_generate_messages_cpp/fast
-
-# Convenience name for target.
 pcltest/CMakeFiles/pcltest.dir/rule:
 	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 pcltest/CMakeFiles/pcltest.dir/rule
 .PHONY : pcltest/CMakeFiles/pcltest.dir/rule
@@ -271,141 +181,6 @@ pcltest: pcltest/CMakeFiles/pcltest.dir/rule
 pcltest/fast:
 	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f pcltest/CMakeFiles/pcltest.dir/build.make pcltest/CMakeFiles/pcltest.dir/build
 .PHONY : pcltest/fast
-
-# Convenience name for target.
-pcltest/CMakeFiles/rosgraph_msgs_generate_messages_eus.dir/rule:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 pcltest/CMakeFiles/rosgraph_msgs_generate_messages_eus.dir/rule
-.PHONY : pcltest/CMakeFiles/rosgraph_msgs_generate_messages_eus.dir/rule
-
-# Convenience name for target.
-rosgraph_msgs_generate_messages_eus: pcltest/CMakeFiles/rosgraph_msgs_generate_messages_eus.dir/rule
-
-.PHONY : rosgraph_msgs_generate_messages_eus
-
-# fast build rule for target.
-rosgraph_msgs_generate_messages_eus/fast:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f pcltest/CMakeFiles/rosgraph_msgs_generate_messages_eus.dir/build.make pcltest/CMakeFiles/rosgraph_msgs_generate_messages_eus.dir/build
-.PHONY : rosgraph_msgs_generate_messages_eus/fast
-
-# Convenience name for target.
-pcltest/CMakeFiles/rosgraph_msgs_generate_messages_lisp.dir/rule:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 pcltest/CMakeFiles/rosgraph_msgs_generate_messages_lisp.dir/rule
-.PHONY : pcltest/CMakeFiles/rosgraph_msgs_generate_messages_lisp.dir/rule
-
-# Convenience name for target.
-rosgraph_msgs_generate_messages_lisp: pcltest/CMakeFiles/rosgraph_msgs_generate_messages_lisp.dir/rule
-
-.PHONY : rosgraph_msgs_generate_messages_lisp
-
-# fast build rule for target.
-rosgraph_msgs_generate_messages_lisp/fast:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f pcltest/CMakeFiles/rosgraph_msgs_generate_messages_lisp.dir/build.make pcltest/CMakeFiles/rosgraph_msgs_generate_messages_lisp.dir/build
-.PHONY : rosgraph_msgs_generate_messages_lisp/fast
-
-# Convenience name for target.
-pcltest/CMakeFiles/std_msgs_generate_messages_cpp.dir/rule:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 pcltest/CMakeFiles/std_msgs_generate_messages_cpp.dir/rule
-.PHONY : pcltest/CMakeFiles/std_msgs_generate_messages_cpp.dir/rule
-
-# Convenience name for target.
-std_msgs_generate_messages_cpp: pcltest/CMakeFiles/std_msgs_generate_messages_cpp.dir/rule
-
-.PHONY : std_msgs_generate_messages_cpp
-
-# fast build rule for target.
-std_msgs_generate_messages_cpp/fast:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f pcltest/CMakeFiles/std_msgs_generate_messages_cpp.dir/build.make pcltest/CMakeFiles/std_msgs_generate_messages_cpp.dir/build
-.PHONY : std_msgs_generate_messages_cpp/fast
-
-# Convenience name for target.
-pcltest/CMakeFiles/rosgraph_msgs_generate_messages_nodejs.dir/rule:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 pcltest/CMakeFiles/rosgraph_msgs_generate_messages_nodejs.dir/rule
-.PHONY : pcltest/CMakeFiles/rosgraph_msgs_generate_messages_nodejs.dir/rule
-
-# Convenience name for target.
-rosgraph_msgs_generate_messages_nodejs: pcltest/CMakeFiles/rosgraph_msgs_generate_messages_nodejs.dir/rule
-
-.PHONY : rosgraph_msgs_generate_messages_nodejs
-
-# fast build rule for target.
-rosgraph_msgs_generate_messages_nodejs/fast:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f pcltest/CMakeFiles/rosgraph_msgs_generate_messages_nodejs.dir/build.make pcltest/CMakeFiles/rosgraph_msgs_generate_messages_nodejs.dir/build
-.PHONY : rosgraph_msgs_generate_messages_nodejs/fast
-
-# Convenience name for target.
-pcltest/CMakeFiles/rosgraph_msgs_generate_messages_py.dir/rule:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 pcltest/CMakeFiles/rosgraph_msgs_generate_messages_py.dir/rule
-.PHONY : pcltest/CMakeFiles/rosgraph_msgs_generate_messages_py.dir/rule
-
-# Convenience name for target.
-rosgraph_msgs_generate_messages_py: pcltest/CMakeFiles/rosgraph_msgs_generate_messages_py.dir/rule
-
-.PHONY : rosgraph_msgs_generate_messages_py
-
-# fast build rule for target.
-rosgraph_msgs_generate_messages_py/fast:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f pcltest/CMakeFiles/rosgraph_msgs_generate_messages_py.dir/build.make pcltest/CMakeFiles/rosgraph_msgs_generate_messages_py.dir/build
-.PHONY : rosgraph_msgs_generate_messages_py/fast
-
-# Convenience name for target.
-pcltest/CMakeFiles/std_msgs_generate_messages_eus.dir/rule:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 pcltest/CMakeFiles/std_msgs_generate_messages_eus.dir/rule
-.PHONY : pcltest/CMakeFiles/std_msgs_generate_messages_eus.dir/rule
-
-# Convenience name for target.
-std_msgs_generate_messages_eus: pcltest/CMakeFiles/std_msgs_generate_messages_eus.dir/rule
-
-.PHONY : std_msgs_generate_messages_eus
-
-# fast build rule for target.
-std_msgs_generate_messages_eus/fast:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f pcltest/CMakeFiles/std_msgs_generate_messages_eus.dir/build.make pcltest/CMakeFiles/std_msgs_generate_messages_eus.dir/build
-.PHONY : std_msgs_generate_messages_eus/fast
-
-# Convenience name for target.
-pcltest/CMakeFiles/std_msgs_generate_messages_nodejs.dir/rule:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 pcltest/CMakeFiles/std_msgs_generate_messages_nodejs.dir/rule
-.PHONY : pcltest/CMakeFiles/std_msgs_generate_messages_nodejs.dir/rule
-
-# Convenience name for target.
-std_msgs_generate_messages_nodejs: pcltest/CMakeFiles/std_msgs_generate_messages_nodejs.dir/rule
-
-.PHONY : std_msgs_generate_messages_nodejs
-
-# fast build rule for target.
-std_msgs_generate_messages_nodejs/fast:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f pcltest/CMakeFiles/std_msgs_generate_messages_nodejs.dir/build.make pcltest/CMakeFiles/std_msgs_generate_messages_nodejs.dir/build
-.PHONY : std_msgs_generate_messages_nodejs/fast
-
-# Convenience name for target.
-pcltest/CMakeFiles/roscpp_generate_messages_nodejs.dir/rule:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 pcltest/CMakeFiles/roscpp_generate_messages_nodejs.dir/rule
-.PHONY : pcltest/CMakeFiles/roscpp_generate_messages_nodejs.dir/rule
-
-# Convenience name for target.
-roscpp_generate_messages_nodejs: pcltest/CMakeFiles/roscpp_generate_messages_nodejs.dir/rule
-
-.PHONY : roscpp_generate_messages_nodejs
-
-# fast build rule for target.
-roscpp_generate_messages_nodejs/fast:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f pcltest/CMakeFiles/roscpp_generate_messages_nodejs.dir/build.make pcltest/CMakeFiles/roscpp_generate_messages_nodejs.dir/build
-.PHONY : roscpp_generate_messages_nodejs/fast
-
-# Convenience name for target.
-pcltest/CMakeFiles/std_msgs_generate_messages_py.dir/rule:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 pcltest/CMakeFiles/std_msgs_generate_messages_py.dir/rule
-.PHONY : pcltest/CMakeFiles/std_msgs_generate_messages_py.dir/rule
-
-# Convenience name for target.
-std_msgs_generate_messages_py: pcltest/CMakeFiles/std_msgs_generate_messages_py.dir/rule
-
-.PHONY : std_msgs_generate_messages_py
-
-# fast build rule for target.
-std_msgs_generate_messages_py/fast:
-	cd /home/wyx/ros_catkin_ws/build && $(MAKE) -f pcltest/CMakeFiles/std_msgs_generate_messages_py.dir/build.make pcltest/CMakeFiles/std_msgs_generate_messages_py.dir/build
-.PHONY : std_msgs_generate_messages_py/fast
 
 src/main.o: src/main.cpp.o
 
@@ -442,27 +217,12 @@ help:
 	@echo "... depend"
 	@echo "... install/strip"
 	@echo "... install/local"
-	@echo "... rebuild_cache"
 	@echo "... test"
 	@echo "... list_install_components"
-	@echo "... roscpp_generate_messages_py"
-	@echo "... roscpp_generate_messages_eus"
-	@echo "... edit_cache"
-	@echo "... roscpp_generate_messages_lisp"
-	@echo "... rosgraph_msgs_generate_messages_cpp"
-	@echo "... std_msgs_generate_messages_lisp"
-	@echo "... roscpp_generate_messages_cpp"
 	@echo "... pcltest"
+	@echo "... edit_cache"
+	@echo "... rebuild_cache"
 	@echo "... install"
-	@echo "... rosgraph_msgs_generate_messages_eus"
-	@echo "... rosgraph_msgs_generate_messages_lisp"
-	@echo "... std_msgs_generate_messages_cpp"
-	@echo "... rosgraph_msgs_generate_messages_nodejs"
-	@echo "... rosgraph_msgs_generate_messages_py"
-	@echo "... std_msgs_generate_messages_eus"
-	@echo "... std_msgs_generate_messages_nodejs"
-	@echo "... roscpp_generate_messages_nodejs"
-	@echo "... std_msgs_generate_messages_py"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"

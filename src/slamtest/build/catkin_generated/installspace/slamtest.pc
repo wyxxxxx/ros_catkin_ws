@@ -1,0 +1,8 @@
+prefix=/usr/local
+
+Name: slamtest
+Description: Description of slamtest
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

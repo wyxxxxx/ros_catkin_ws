@@ -1,0 +1,16 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/wyx/ros_catkin_ws/src/opencvtest/src/opencvtestmain.cpp
+opencv2/opencv.hpp
+-
+iostream
+-
+math.h
+-
+

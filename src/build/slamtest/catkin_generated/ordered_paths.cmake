@@ -1,1 +1,1 @@
-set(ORDERED_PATHS "/opt/ros/melodic/lib;/usr/lib/x86_64-linux-gnu")
+set(ORDERED_PATHS "/opt/ros/melodic/lib")

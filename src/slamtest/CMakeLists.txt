@@ -11,14 +11,17 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
   std_msgs
-  PCL 
-  Eigen3
-  OpenCV  REQUIRED
 )
 
+find_package(Eigen3)
+find_package(OpenCV  REQUIRED)
+find_package(PCL 1.2 REQUIRED)
 
-INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
-INCLUDE_DIRECTORIES(${PCL_INCLUDE_DIRS})
+
+include_directories(${EIGEN3_INCLUDE_DIR})
+include_directories(${PCL_INCLUDE_DIRS})
+include_directories(${OpenCV_INCLUDE_DIRS}
+)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -217,5 +220,6 @@ add_definitions(${PCL_DEFINITIONS})
 add_executable(slamtest src/slamtestmain.cpp)
 
 target_link_libraries(slamtest ${catkin_LIBRARIES})
-target_link_libraries (slamtest ${PCL_LIBRARIES})
+target_link_libraries(slamtest ${PCL_LIBRARIES})
+target_link_libraries(slamtest ${OpenCV_LIBS} )
 

@@ -11,22 +11,24 @@
 #include <Eigen/Dense>
 #include <Eigen/Cholesky>
 
-// 此处为include相关消息类的头文件，如果有自定义的头文件，请将其包含在内
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/LaserScan.h>
 
-/*//pcl库
+//pcl库
 #include <pcl/point_cloud.h> 
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/PCLPointCloud2.h>
 #include <pcl/conversions.h>
 #include <pcl_ros/transforms.h>
 #include <pcl/visualization/cloud_viewer.h>
-pcl::visualization::CloudViewer viewer("Cloud Viewer");
-//#include <pcl/io/io.h>
+#include <pcl/ModelCoefficients.h>
 //#include <pcl/io/pcd_io.h>
-//#include <pcl/point_types.h>
-*/
+#include <pcl/point_types.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/filters/extract_indices.h>
+
 
 //OpenCV
 #include <opencv2/opencv.hpp>
@@ -40,6 +42,7 @@ pcl::visualization::CloudViewer viewer("Cloud Viewer");
 using namespace Eigen;
 using namespace std;
 using namespace cv;
+using namespace pcl;
 
 //函数功能：读雷达数据并转换为笛卡尔坐标系
 MatrixXf ReadLisarData(std::string bagfile,float RotAngle){
@@ -229,6 +232,7 @@ struct GPRdatastruct{
     
 };
 
+//函数功能：GPR
 GPRdatastruct GPR(MatrixXf inputloghyper,MatrixXf x_oneobj,MatrixXf y_oneobj,MatrixXf star_oneobj){
     GPRdatastruct GPRdata;
     float ell=0,sf2=0,sn2=0;
@@ -445,7 +449,7 @@ int main(int argc, char** argv){
 	Mat kernel = (Mat_<float>(3, 3) << 1, 1, 1, 1, -8, 1, 1, 1, 1);
 	Mat imgLaplance;
 	Mat sharpenImg = I;
-	filter2D(I, imgLaplance, CV_32F, kernel, Point(-1, -1), 0, BORDER_DEFAULT);
+	filter2D(I, imgLaplance, CV_32F, kernel, Point(-1, -1), 0);
 	I.convertTo(sharpenImg, CV_32F);
 	Mat resultImg = sharpenImg - imgLaplance;
 	resultImg.convertTo(resultImg, CV_8UC3);
@@ -638,10 +642,56 @@ int main(int argc, char** argv){
     MatrixXf mu_oneobj,Zl_oneobj;
     mu_oneobj=GPRdata.fmean.array()+m_Z_oneobj;
     Zl_oneobj=y_oneobj.array()+m_Z_oneobj;
-    cout<<mu_oneobj<<endl;
-    cout<<Zl_oneobj<<endl;
 
-    waitKey(0);
+    float now_uncertainty_value = GPRdata.V.sum()/GPRdata.V.rows()*100; //计算不确定度副
+    cout<<now_uncertainty_value<<endl;
+    
+    //RANSAC移除地面
+    PointCloud<PointXYZ>::Ptr cloud(new PointCloud<PointXYZ>);
+    PointCloud<PointXYZ>::Ptr cloud_filtered(new PointCloud<PointXYZ>);
+    cloud->width = velox.rows();
+    cloud->height = 1;
+    cloud->points.resize(velox.rows());
+    for(int i=0;i<velox.rows();i++)
+    {
+        cloud->points[i].x=velox(i,0);
+        cloud->points[i].y=velox(i,1);
+        cloud->points[i].z=velox(i,2);
+    }
+    
+    ModelCoefficients::Ptr coefficients (new ModelCoefficients);
+    PointIndices::Ptr inliers (new PointIndices);
+    // Create the segmentation object
+    SACSegmentation<PointXYZ> seg;
+    // Optional
+    seg.setOptimizeCoefficients (true);
+    // Mandatory
+    seg.setModelType (SACMODEL_PLANE);
+    seg.setMethodType (SAC_RANSAC);
+    // 距离阈值 单位m
+    seg.setDistanceThreshold (0.01f);
+    seg.setInputCloud (cloud);
+    seg.segment(*inliers, *coefficients);
+    
+    ExtractIndices<PointXYZ> extract;
+    extract.setInputCloud (cloud);
+    extract.setIndices (inliers);
+    extract.setNegative (true);
+    extract.filter (*cloud_filtered);
+    
+    cout<<cloud_filtered->points.size()<<endl;
+    /*//移除地面点云显示
+    pcl::visualization::CloudViewer viewer("Filtered");
+    viewer.showCloud(cloud_filtered);
+    while(!viewer.wasStopped()){
+    
+    }
+    */
+    
+    
+    
+    //waitKey(0);
+    
     return 0;
     
 }
