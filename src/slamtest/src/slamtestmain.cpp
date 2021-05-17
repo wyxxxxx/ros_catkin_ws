@@ -394,19 +394,23 @@ int main(int argc, char** argv){
     P=R0*RT;
     MatrixXf Px,Pxx;
     Px.resize(3,velox.rows());
+    
+    
+    //Readdepthmap
     Px=P*velox.transpose();
     Pxx.resize(velox.rows(),3);
     Pxx=Px.transpose();
-    
     Pxx.col(0)=Pxx.col(0).array()/Pxx.col(2).array();
     Pxx.col(1)=Pxx.col(1).array()/Pxx.col(2).array();
-    
     //原始深度图
     MatrixXf mD = MatrixXf::Zero(I.rows,I.cols);
     for(int i=0;i<Pxx.rows();i++)
     {
         mD(round(Pxx(i,1)),round(Pxx(i,0)))=Pxx(i,2);
     }
+    
+    
+    
     
     Mat GrayI;
     cvtColor(I,GrayI,CV_BGR2GRAY);
@@ -458,7 +462,7 @@ int main(int argc, char** argv){
 	Mat sharpenImg = I;
 	filter2D(I, imgLaplance, CV_32F, kernel, Point(-1, -1), 0);
 	I.convertTo(sharpenImg, CV_32F);
-	Mat resultImg = sharpenImg - imgLaplance;
+	Mat resultImg = sharpenImg-imgLaplance;
 	resultImg.convertTo(resultImg, CV_8UC3);
 	imgLaplance.convertTo(imgLaplance, CV_8UC3);
 	//imshow("sharpen image", resultImg);
@@ -526,13 +530,14 @@ int main(int argc, char** argv){
 	//imshow("Final Result", dst);
 	
 	//输出目标数量
-    cout<<"obstacle_num = "<<contours.size()<<endl;
+	int obstacle_num = contours.size();
+    cout<<"obstacle_num = "<<obstacle_num<<endl;
     /*******************************end****************************/
     
     //计算中心坐标
-	vector<Moments> mu(contours.size());
-    vector<Point2f> mc(contours.size());
-	for (int i = 0; i < contours.size(); i++)
+	vector<Moments> mu(obstacle_num);
+    vector<Point2f> mc(obstacle_num);
+	for (int i = 0; i < obstacle_num; i++)
 	{
 		mu[i] = moments(contours[i], false);                             //计算矩
         mc[i] = Point2f(mu[i].m10 / mu[i].m00, mu[i].m01 / mu[i].m00);   //计算中心矩
@@ -547,9 +552,9 @@ int main(int argc, char** argv){
     //中心点坐标降序排序
     MatrixXf CTP,CTP_sorted;
     VectorXi Ind;
-    CTP.resize(contours.size(),3);
-    CTP_sorted.resize(contours.size(),3);
-    for(int i=0;i<contours.size();i++){
+    CTP.resize(obstacle_num,3);
+    CTP_sorted.resize(obstacle_num,3);
+    for(int i=0;i<obstacle_num;i++){
         CTP(i,0) = mc[i].y;
         CTP(i,1) = mc[i].x;
         CTP(i,2) = depth(i);
@@ -598,7 +603,8 @@ int main(int argc, char** argv){
     Mat pro_emg;
 	resultImg.convertTo(pro_emg, CV_8U);
 	vector<vector<Point>> contours2;
-	findContours(pro_emg, contours2,RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0));
+    vector<Vec4i> hierarchy;
+	findContours(pro_emg, contours2,hierarchy,RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0));
     VectorXf mark_objs;
     mark_objs.resize(Pxx.rows());
     for(int i=0;i<Pxx.rows();i++){
@@ -715,6 +721,14 @@ int main(int argc, char** argv){
     };
     visualization::PCLVisualizer viewer("segmention");
     int j = 0;
+    vector <float> moment_of_inertia;
+    vector <float> eccentricity;
+    PointXYZ min_point_AABB;             //AABB包围盒
+    PointXYZ max_point_AABB;
+    Vector3f major_vector, middle_vector, minor_vector;
+    Vector3f mass_center;
+    MatrixXf Centroid_Point_velo;
+    Centroid_Point_velo.resize(obstacle_num,4);
     for(vector<PointIndices>::const_iterator it=cluster_indices.begin();it!=cluster_indices.end();++it)
     {
         PointCloud<PointXYZ>::Ptr cloud_cluster (new PointCloud<PointXYZ>);
@@ -731,12 +745,6 @@ int main(int argc, char** argv){
         feature_extractor.setInputCloud(cloud_cluster);
         feature_extractor.compute();
         
-        vector <float> moment_of_inertia;
-        vector <float> eccentricity;
-        PointXYZ min_point_AABB;             //AABB包围盒
-        PointXYZ max_point_AABB;
-        Vector3f major_vector, middle_vector, minor_vector;
-        Vector3f mass_center;
         
         feature_extractor.getMomentOfInertia(moment_of_inertia);
         feature_extractor.getEccentricity(eccentricity);
@@ -749,6 +757,11 @@ int main(int argc, char** argv){
             <<max_point_AABB.z-min_point_AABB.z<<endl;
         cout<<"包围盒"<<j+1<<"中心点:"<<endl;
         cout<<mass_center<<endl;
+        
+        Centroid_Point_velo(j,0)=mass_center(0);
+        Centroid_Point_velo(j,1)=mass_center(1);
+        Centroid_Point_velo(j,2)=mass_center(2);
+        Centroid_Point_velo(j,3)=1;
     
         /*//可视化包围盒
         visualization::PointCloudColorHandlerCustom<PointXYZ> cloud_in_color_h(cloud,
@@ -768,6 +781,127 @@ int main(int argc, char** argv){
     
     
     
+    
+    
+    
+    
+    //3D重建部分
+    ////计算中心点深度排序
+    MatrixXf centerpoint_px,centerpoint_px_pro1;
+    centerpoint_px.resize(obstacle_num,3);
+    centerpoint_px_pro1 = P*Centroid_Point_velo.transpose();
+    centerpoint_px=centerpoint_px_pro1.transpose();
+    centerpoint_px.col(0)=centerpoint_px.col(0).array()/centerpoint_px.col(2).array();
+    centerpoint_px.col(1)=centerpoint_px.col(1).array()/centerpoint_px.col(2).array();
+    MatrixXf centerpoint_px_sorted;
+    VectorXi Ind2,Label_up_new;
+    centerpoint_px_sorted.resize(obstacle_num,3);
+    Ind2.resize(obstacle_num);
+    Label_up_new.resize(obstacle_num);
+    sort_vec(centerpoint_px,centerpoint_px_sorted,Ind2);
+    for(int i=0;i<obstacle_num;i++)
+    {
+        Label_up_new(i)=int(mark.at<uchar>(round(centerpoint_px_sorted(i,1)),round(centerpoint_px_sorted(i,0))));
+    }
+    
+    ////开始依次重建
+    for(int i1=0;i1<obstacle_num;i1++)
+    {
+        //当前目标处设为1
+        int labelnum=0;
+        for(int i=0;i<I.cols;i++){
+            for(int j=0;j<I.rows;j++){
+                if(int(mark.at<uchar>(j,i))==Label_up_new(i1))
+                {
+                    Label(j,i)=1;
+                    labelnum++;
+                }
+                else
+                {
+                    Label(j,i)=0;
+                }
+            }
+        }
+        //计算凸包内部点的坐标
+        MatrixXf xstar_manybj;
+        int labelnum2=0;
+        xstar_manybj.resize(labelnum,2);
+        for(int i=0;i<I.cols;i++){
+            for(int j=0;j<I.rows;j++){
+                if(Label(j,i)==1)
+                {
+                    xstar_manybj(labelnum2,0)=i;
+                    xstar_manybj(labelnum2,1)=j;
+                    labelnum2++;
+                }
+            }
+        }
+        
+        //
+        //计算已知深度的坐标及深度值
+        VectorXf mark_objs2;
+        mark_objs2.resize(Pxx.rows());
+        for(int i=0;i<Pxx.rows();i++){
+            Point2f pt;
+            pt.x = Pxx(i,0);
+            pt.y = Pxx(i,1);
+            if(pointPolygonTest(contours2[i1],pt,false)==1){
+                mark_objs2(i)=1;
+            }
+            else{
+                mark_objs2(i)=0;
+            }
+        }
+        MatrixXf x_manyobj,xx_manyobj,y_manyobj,yy_manyobj;
+        x_manyobj.resize(Pxx.rows(),2);
+        y_manyobj.resize(Pxx.rows(),1);
+        x_manyobj.col(0)=Pxx.block(0,0,Pxx.rows(),1).array()*mark_objs2.array();
+        x_manyobj.col(1)=Pxx.block(0,1,Pxx.rows(),1).array()*mark_objs2.array();
+        y_manyobj=Pxx.col(2).array()*mark_objs2.array();
+        xx_manyobj=x_manyobj;
+        yy_manyobj=y_manyobj;
+        
+        for(int i=0,j=0,k=0;i<Pxx.rows();i++){
+            if(xx_manyobj(i,0)==0){
+                RemoveRow(x_manyobj,j);
+            }
+            else{
+                j++;
+            }
+            if(yy_manyobj(i,0)==0){
+                RemoveRow(y_manyobj,k);
+            }
+            else{
+                k++;
+            }
+        }
+        float m_Z_manyobj=0;
+        m_Z_manyobj=y_manyobj.sum()/y_manyobj.rows();       //平均值
+        y_manyobj=y_manyobj.array()-m_Z_manyobj;
+        
+        //GPR
+        GPRdatastruct GPRdata2;
+        GPRdata2=GPR(inputloghyper,x_manyobj,y_manyobj,xstar_manybj);
+        MatrixXf mu_oneobj,Zl_oneobj;
+        mu_oneobj=GPRdata2.fmean.array()+m_Z_manyobj;
+        Zl_oneobj=y_manyobj.array()+m_Z_manyobj;
+        
+        
+        /*drawContours( pro_emg, contours2, 0, 1, CV_FILLED, 8, hierarchy );
+        imshow("wind",pro_emg);
+        cout<<mark<<endl;
+        cout<<Label<<endl;
+        cout<<x_manyobj<<endl;
+        cout<<y_manyobj<<endl;
+        cout<<Zl_oneobj<<endl;
+        cout<<Ind2<<endl;
+        cout<<i1<<endl;
+        cout<<centerpoint_px_sorted<<endl;
+        cout<<Label_up_new<<endl;
+        */
+        break;
+    }
+    
     /*//pcl可视化
     while(!viewer.wasStopped())
     {
@@ -778,7 +912,7 @@ int main(int argc, char** argv){
     
     
     
-    //waitKey(0);
+    waitKey(0);
     
     return 0;
     
