@@ -415,7 +415,9 @@ slamtest/CMakeFiles/slamtest.dir/src/slamtestmain.cpp.o: /usr/include/pcl-1.8/pc
 slamtest/CMakeFiles/slamtest.dir/src/slamtestmain.cpp.o: /usr/include/pcl-1.8/pcl/exceptions.h
 slamtest/CMakeFiles/slamtest.dir/src/slamtestmain.cpp.o: /usr/include/pcl-1.8/pcl/features/feature.h
 slamtest/CMakeFiles/slamtest.dir/src/slamtestmain.cpp.o: /usr/include/pcl-1.8/pcl/features/impl/feature.hpp
+slamtest/CMakeFiles/slamtest.dir/src/slamtestmain.cpp.o: /usr/include/pcl-1.8/pcl/features/impl/moment_of_inertia_estimation.hpp
 slamtest/CMakeFiles/slamtest.dir/src/slamtestmain.cpp.o: /usr/include/pcl-1.8/pcl/features/impl/normal_3d.hpp
+slamtest/CMakeFiles/slamtest.dir/src/slamtestmain.cpp.o: /usr/include/pcl-1.8/pcl/features/moment_of_inertia_estimation.h
 slamtest/CMakeFiles/slamtest.dir/src/slamtestmain.cpp.o: /usr/include/pcl-1.8/pcl/features/normal_3d.h
 slamtest/CMakeFiles/slamtest.dir/src/slamtestmain.cpp.o: /usr/include/pcl-1.8/pcl/filters/boost.h
 slamtest/CMakeFiles/slamtest.dir/src/slamtestmain.cpp.o: /usr/include/pcl-1.8/pcl/filters/extract_indices.h

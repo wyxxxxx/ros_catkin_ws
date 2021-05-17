@@ -59,9 +59,15 @@ pcl/filters/extract_indices.h
 -
 pcl/filters/voxel_grid.h
 -
+pcl/kdtree/kdtree.h
+-
+pcl/common/common.h
+-
+pcl/common/transforms.h
+-
 pcl/features/normal_3d.h
 -
-pcl/kdtree/kdtree.h
+pcl/features/moment_of_inertia_estimation.h
 -
 opencv2/opencv.hpp
 -
@@ -3534,8 +3540,24 @@ pcl/features/impl/feature.hpp
 pcl/search/pcl_search.h
 -
 
+/usr/include/pcl-1.8/pcl/features/impl/moment_of_inertia_estimation.hpp
+pcl/features/moment_of_inertia_estimation.h
+-
+
 /usr/include/pcl-1.8/pcl/features/impl/normal_3d.hpp
 pcl/features/normal_3d.h
+-
+
+/usr/include/pcl-1.8/pcl/features/moment_of_inertia_estimation.h
+vector
+-
+math.h
+-
+pcl/features/feature.h
+-
+pcl/PointIndices.h
+-
+pcl/features/impl/moment_of_inertia_estimation.hpp
 -
 
 /usr/include/pcl-1.8/pcl/features/normal_3d.h

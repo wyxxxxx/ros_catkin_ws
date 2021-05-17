@@ -31,8 +31,11 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/voxel_grid.h>
-#include <pcl/features/normal_3d.h>
 #include <pcl/kdtree/kdtree.h>
+#include <pcl/common/common.h>
+#include <pcl/common/transforms.h>
+#include <pcl/features/normal_3d.h>
+#include <pcl/features/moment_of_inertia_estimation.h>
 
 //OpenCV
 #include <opencv2/opencv.hpp>
@@ -648,7 +651,7 @@ int main(int argc, char** argv){
     Zl_oneobj=y_oneobj.array()+m_Z_oneobj;
 
     float now_uncertainty_value = GPRdata.V.sum()/GPRdata.V.rows()*100; //计算不确定度副
-    cout<<now_uncertainty_value<<endl;
+    cout<<"当前目标不确定度:"<<now_uncertainty_value<<endl;
     
     //RANSAC移除地面
     PointCloud<PointXYZ>::Ptr cloud(new PointCloud<PointXYZ>);
@@ -662,28 +665,22 @@ int main(int argc, char** argv){
         cloud->points[i].y=velox(i,1);
         cloud->points[i].z=velox(i,2);
     }
-    
     ModelCoefficients::Ptr coefficients (new ModelCoefficients);
     PointIndices::Ptr inliers (new PointIndices);
-    // Create the segmentation object
-    SACSegmentation<PointXYZ> seg;
-    // Optional
-    seg.setOptimizeCoefficients (true);
-    // Mandatory
-    seg.setModelType (SACMODEL_PLANE);
+    SACSegmentation<PointXYZ> seg;            // Create the segmentation object
+    seg.setOptimizeCoefficients (true);       // Optional
+    seg.setModelType (SACMODEL_PLANE);        // Mandatory
     seg.setMethodType (SAC_RANSAC);
-    // 距离阈值 单位m
-    seg.setDistanceThreshold (0.018f);
+    seg.setDistanceThreshold (0.018f);         // 距离阈值 单位m
     seg.setInputCloud (cloud);
     seg.segment(*inliers, *coefficients);
-    
     ExtractIndices<PointXYZ> extract;
     extract.setInputCloud (cloud);
     extract.setIndices (inliers);
     extract.setNegative (true);
     extract.filter (*cloud_filtered);
     
-    cout<<cloud_filtered->points.size()<<endl;
+    //cout<<cloud_filtered->points.size()<<endl;
     /*//pcl移除地面点云显示
     pcl::visualization::CloudViewer viewer("Filtered");
     viewer.showCloud(cloud_filtered);
@@ -698,12 +695,12 @@ int main(int argc, char** argv){
     
     vector<PointIndices> cluster_indices;
     EuclideanClusterExtraction<PointXYZ> ec;
-    ec.setClusterTolerance (0.025f); //设置近邻搜索的搜索半径为2cm
-    ec.setMinClusterSize (30);    //设置一个聚类需要的最少点数目为100
-    ec.setMaxClusterSize (400);  //设置一个聚类需要的最大点数目为25000
-    ec.setSearchMethod (tree);     //设置点云的搜索机制
-    ec.setInputCloud (cloud_filtered); //设置原始点云 
-    ec.extract (cluster_indices);      //从点云中提取聚类
+    ec.setClusterTolerance (0.023f);       //设置近邻搜索的搜索半径为2.5cm
+    ec.setMinClusterSize (30);             //设置一个聚类需要的最少点数目为30
+    ec.setMaxClusterSize (400);            //设置一个聚类需要的最大点数目
+    ec.setSearchMethod (tree);             //设置点云的搜索机制
+    ec.setInputCloud (cloud_filtered);     //设置原始点云 
+    ec.extract (cluster_indices);          //从点云中提取聚类
     
     //可视化聚类结果
     int color_bar[][3]=
@@ -721,26 +718,64 @@ int main(int argc, char** argv){
     for(vector<PointIndices>::const_iterator it=cluster_indices.begin();it!=cluster_indices.end();++it)
     {
         PointCloud<PointXYZ>::Ptr cloud_cluster (new PointCloud<PointXYZ>);
-        for(vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++)
-            cloud_cluster->points.push_back (cloud_filtered->points[*pit]); 
+        for(vector<int>::const_iterator pit=it->indices.begin();pit != it->indices.end();pit++)
+            cloud_cluster->points.push_back(cloud_filtered->points[*pit]); 
         
-        cloud_cluster->width = cloud_cluster->points.size ();
+        cloud_cluster->width = cloud_cluster->points.size();
         cloud_cluster->height = 1;
         cloud_cluster->is_dense = true;
         cout<<"PointCloud representing the Cluster: "<<cloud_cluster->points.size()<<" data points."<< endl;
+        
+        //计算包围盒
+        MomentOfInertiaEstimation <PointXYZ> feature_extractor;
+        feature_extractor.setInputCloud(cloud_cluster);
+        feature_extractor.compute();
+        
+        vector <float> moment_of_inertia;
+        vector <float> eccentricity;
+        PointXYZ min_point_AABB;             //AABB包围盒
+        PointXYZ max_point_AABB;
+        Vector3f major_vector, middle_vector, minor_vector;
+        Vector3f mass_center;
+        
+        feature_extractor.getMomentOfInertia(moment_of_inertia);
+        feature_extractor.getEccentricity(eccentricity);
+        feature_extractor.getAABB(min_point_AABB, max_point_AABB);
+        feature_extractor.getEigenVectors(major_vector, middle_vector, minor_vector);
+        feature_extractor.getMassCenter(mass_center);
+
+        cout<<"包围盒"<<j+1<<"边长:"<<endl;
+        cout<<max_point_AABB.x-min_point_AABB.x<<"|"<<max_point_AABB.y-min_point_AABB.y<<"|"
+            <<max_point_AABB.z-min_point_AABB.z<<endl;
+        cout<<"包围盒"<<j+1<<"中心点:"<<endl;
+        cout<<mass_center<<endl;
+    
+        /*//可视化包围盒
         visualization::PointCloudColorHandlerCustom<PointXYZ> cloud_in_color_h(cloud,
             color_bar[j][0],
             color_bar[j][1],
-            color_bar[j][2]);                           //赋予显示点云的颜色
+            color_bar[j][2]);//赋予显示点云的颜色
         viewer.addPointCloud(cloud_cluster, cloud_in_color_h, to_string(j));
+        viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, to_string(j));
+        viewer.addCube(min_point_AABB.x, max_point_AABB.x, min_point_AABB.y, 
+                       max_point_AABB.y, min_point_AABB.z, max_point_AABB.z, 1.0, 1.0, 0.0, to_string(j));
+        viewer.setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_REPRESENTATION,            
+                                           visualization::PCL_VISUALIZER_REPRESENTATION_WIREFRAME, to_string(j));
+        */
         j++;
     }
+    cout<<"定位完成，开始重建"<<endl;
     
+    
+    
+    /*//pcl可视化
     while(!viewer.wasStopped())
     {
         viewer.spinOnce(100);
         boost::this_thread::sleep(boost::posix_time::microseconds(100000));
     }
+    */
+    
     
     
     //waitKey(0);
