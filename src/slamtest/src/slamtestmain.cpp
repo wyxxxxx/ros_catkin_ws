@@ -719,7 +719,7 @@ int main(int argc, char** argv){
         { 255,255,255 },
         { 255,0,255 }
     };
-    visualization::PCLVisualizer viewer("segmention");
+    //visualization::PCLVisualizer viewer("segmention");
     int j = 0;
     vector <float> moment_of_inertia;
     vector <float> eccentricity;
@@ -744,7 +744,6 @@ int main(int argc, char** argv){
         MomentOfInertiaEstimation <PointXYZ> feature_extractor;
         feature_extractor.setInputCloud(cloud_cluster);
         feature_extractor.compute();
-        
         
         feature_extractor.getMomentOfInertia(moment_of_inertia);
         feature_extractor.getEccentricity(eccentricity);
@@ -780,11 +779,6 @@ int main(int argc, char** argv){
     cout<<"定位完成，开始重建"<<endl;
     
     
-    
-    
-    
-    
-    
     //3D重建部分
     ////计算中心点深度排序
     MatrixXf centerpoint_px,centerpoint_px_pro1;
@@ -805,6 +799,10 @@ int main(int argc, char** argv){
     }
     
     ////开始依次重建
+    MatrixXf Reconstruction_model_manyobj_x=MatrixXf::Zero(obstacle_num*3000,4);
+    MatrixXf Raw_model_manyobj_x=MatrixXf::Zero(obstacle_num*300,3);
+    int Recon_indice=0;
+    int Raw_indice=0;
     for(int i1=0;i1<obstacle_num;i1++)
     {
         //当前目标处设为1
@@ -899,17 +897,169 @@ int main(int argc, char** argv){
         cout<<centerpoint_px_sorted<<endl;
         cout<<Label_up_new<<endl;
         */
-        break;
+        Reconstruction_model_manyobj_x.block(Recon_indice,0,GPRdata2.V.rows(),1)=GPRdata2.V;
+        Reconstruction_model_manyobj_x.block(Recon_indice,1,mu_oneobj.rows(),1)=mu_oneobj;
+        Reconstruction_model_manyobj_x.block(Recon_indice,2,xstar_manybj.rows(),2)=xstar_manybj;
+        Recon_indice+=GPRdata2.V.rows();
+        
+        Raw_model_manyobj_x.block(Raw_indice,0,x_manyobj.rows(),2)=x_manyobj;
+        Raw_model_manyobj_x.block(Raw_indice,2,Zl_oneobj.rows(),1)=Zl_oneobj;
+        Raw_indice+=x_manyobj.rows();
     }
     
-    /*//pcl可视化
+    MatrixXf Reconstruction_model_manyobj=Reconstruction_model_manyobj_x;
+    MatrixXf Raw_model_manyobj=Raw_model_manyobj_x;
+    
+    //删除矩阵中的0行
+    for(int i=0,j=0;i<Raw_model_manyobj_x.rows();i++){
+        if(Raw_model_manyobj_x(i,0)==0){
+            RemoveRow(Raw_model_manyobj,j);
+        }
+        else{
+            j++;
+        }
+    }
+    for(int i=0,j=0;i<Reconstruction_model_manyobj_x.rows();i++){
+        if(Reconstruction_model_manyobj_x(i,0)==0){
+            RemoveRow(Reconstruction_model_manyobj,j);
+        }
+        else{
+            j++;
+        }
+    }
+    
+    MatrixXf fulldepthmap_3D=MatrixXf::Zero(I.rows,I.cols); 
+    for(int i=0;i<Reconstruction_model_manyobj.rows();i++)
+    {
+        fulldepthmap_3D(Reconstruction_model_manyobj(i,3),Reconstruction_model_manyobj(i,2))=
+                                                            Reconstruction_model_manyobj(i,1);
+    }
+    
+    float fdx=R0(0,0);
+    float fdy=R0(1,1);
+    float u0=R0(0,2);
+    float v0=R0(1,2);
+    
+    MatrixXf u2=MatrixXf::Zero(I.rows,I.cols); 
+    MatrixXf v2=MatrixXf::Zero(I.rows,I.cols);
+    MatrixXf z2=MatrixXf::Zero(I.rows,I.cols);
+    MatrixXf j2=MatrixXf::Zero(I.rows,I.cols);
+    MatrixXf k2=MatrixXf::Zero(I.rows,I.cols);
+    for(int i=0;i<I.cols;i++)
+    {
+        u2.col(i).array()=i+1;
+    }
+    for(int i=0;i<I.rows;i++)
+    {
+        v2.row(i).array()=i+1;
+    }
+    j2=fulldepthmap_3D.array()*(u2.array()-u0);
+    k2=fulldepthmap_3D.array()*(v2.array()-v0);
+    
+    
+    VectorXf Z2,X2,Y2,K2,J2;
+    VectorXf One2=VectorXf::Ones(I.rows*I.cols);
+    Z2.resize(I.rows*I.cols);
+    X2.resize(I.rows*I.cols);
+    Y2.resize(I.rows*I.cols);
+    K2.resize(I.rows*I.cols);
+    J2.resize(I.rows*I.cols);
+    int Z2_indice=0;
+    for(int i=0;i<I.cols;i++)
+    {
+        for(int j=0;j<I.rows;j++)
+        {
+            Z2(Z2_indice)=fulldepthmap_3D(j,i);
+            Z2_indice++;
+        }
+    }
+    int J2_indice=0;
+    for(int i=0;i<I.cols;i++)
+    {
+        for(int j=0;j<I.rows;j++)
+        {
+            J2(J2_indice)=j2(j,i);
+            J2_indice++;
+        }
+    }
+    X2=J2.array()/fdx;
+    int K2_indice=0;
+    for(int i=0;i<I.cols;i++)
+    {
+        for(int j=0;j<I.rows;j++)
+        {
+            K2(K2_indice)=k2(j,i);
+            K2_indice++;
+        }
+    }
+    Y2=K2.array()/fdy;
+    
+    MatrixXf Point_camera2;
+    Point_camera2.resize(I.rows*I.cols,4);
+    Point_camera2<<X2,Y2,Z2,One2;           //相机坐标系下稠密点云
+    
+    MatrixXf object_velo2=(RT.inverse()*Point_camera2.transpose()).transpose(); //雷达坐标系下稠密点云
+    
+    /*//pcl cloud_viewer可视化雷达坐标系下稠密点云
+    visualization::CloudViewer viewer("cloud3");
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud3 (new pcl::PointCloud<pcl::PointXYZI>);
+    cloud3->points.resize(Point_camera2.rows());
+    cloud3->width = Point_camera2.rows();
+    cloud3->height = 1;
+    
+    for(int i=0;i<Point_camera2.rows();i++)
+    {
+        cloud3->points[i].x=Point_camera2(i,0);
+        cloud3->points[i].y=Point_camera2(i,1);
+        cloud3->points[i].z=Point_camera2(i,2);
+    }
+    
+    viewer.showCloud(cloud3);
+    
     while(!viewer.wasStopped())
+    {
+        //viewer.spinOnce(100);
+        //boost::this_thread::sleep(boost::posix_time::microseconds(100000));
+    }
+    */
+    MatrixXf cloudRGB;
+    cloudRGB.resize(I.rows*I.cols,3);
+    int cloudRGB_indice=0;
+    for(int i=0;i<I.cols;i++)
+    {
+        for(int j=0;j<I.rows;j++)
+        {
+            cloudRGB(cloudRGB_indice,0)=I.at<Vec3b>(j,i)[2]; //r
+            cloudRGB(cloudRGB_indice,1)=I.at<Vec3b>(j,i)[1]; //g
+            cloudRGB(cloudRGB_indice,2)=I.at<Vec3b>(j,i)[0]; //b
+            cloudRGB_indice++;
+        }
+    }
+    
+    PointCloud<PointXYZRGB>::Ptr cloud3(new PointCloud<PointXYZRGB>);
+    cloud3->points.resize(Point_camera2.rows());
+    cloud3->width = Point_camera2.rows();
+    cloud3->height = 1;
+
+    for(int i=0;i<Point_camera2.rows();i++)
+    {
+        cloud3->points[i].x=Point_camera2(i,0);
+        cloud3->points[i].y=Point_camera2(i,1);
+        cloud3->points[i].z=Point_camera2(i,2);
+        cloud3->points[i].r=cloudRGB(i,0);
+        cloud3->points[i].g=cloudRGB(i,1);
+        cloud3->points[i].b=cloudRGB(i,2);
+    }
+    
+    visualization::PCLVisualizer viewer("3Drgbcloud");
+    visualization::PointCloudColorHandlerRGBField<PointXYZRGB> rgb(cloud3);
+    viewer.addPointCloud<pcl::PointXYZRGB>(cloud3, "3d rgb cloud");
+    
+    while (!viewer.wasStopped())
     {
         viewer.spinOnce(100);
         boost::this_thread::sleep(boost::posix_time::microseconds(100000));
     }
-    */
-    
     
     
     waitKey(0);
